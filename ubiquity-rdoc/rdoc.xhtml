@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+      xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<head>
+  <title>Ubiquity RDoc Search Command</title>
+</head>
+<body>
+<p>This xhtml source contains commands for searching libraries published as Rdocs.  Its
+corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here</a>.</p>
+<div id="rdoc-search" style="display: none;">
+    <p>Searches for <b style="color:yellow">${searchTerm}</b> in <b style="color:yellow">${rdoc}</b> rdoc.</p>
+	<div style="height: 200px; overflow: auto; border: 1px solid #0073F3; padding: 5px;">
+    {for sug in suggestions}
+      <a href="${sug.url}" style="font-size: 85%; color: #EEE;">${sug.name}</a><br />
+    {forelse}
+	  {if !indexReady}
+	      <p>Loading...</p>
+	  {else}
+	  	  <p>Your search did not match any class or method.</p>
+	  {/if}
+    {/for}
+	</div>
+	<p>Showing ${suggestionCount} item(s).</p>
+	<small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
+</div>
+<script class="commands"><![CDATA[
+var TallEye = {
+    homepage: "http://projects.talleye.com/ubiquity-rdoc/",
+    author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
+    license: "MPL, GPL"
+};
+var noun_type_rdoc = {
+    _name: 'rdoc',
+    _rdocs: {
+        rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
+        ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
+    },
+    _default: 'rails',
+    _makeDefault: function (def) {
+      if (this._rdocs[def]) {
+        this._default = def;
+        displayMessage('OK! You can try rdoc command for '+def+' now.');
+      } else {
+        displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
+      }
+    },
+    _add: function(name, url) {
+        this._rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+        this._loadIndex(name);
+    },
+    _loadIndex: function(rdoc_type, callback) {
+        var indexes = ['class', 'method'];
+        var thatRdocs = this._rdocs[rdoc_type];
+        for (idx in indexes) {
+          (function(idx){
+            Utils.parseRemoteDocument(
+                (thatRdocs.baseUrl + 'fr_'+ indexes[idx] +'_index.html'),
+                null,              
+                function(response) {
+                   responseJSON = [];
+                   jQuery("a",response).each( function(i) {
+                      responseJSON.push({name: this.text, url: this.attributes[0].nodeValue});
+                   });
+                   thatRdocs.searchIndex[indexes[idx]] = thatRdocs.searchIndex[indexes[idx]].concat(responseJSON);
+                   if (idx == 1) {
+                     thatRdocs.isIndexed = true;
+                     if( typeof callback == "function" ) {
+                       callback();
+                     }
+                   }
+                },
+                function(){
+                    displayMessage("Error when fetching rdoc index.");
+                }
+            );
+          })(idx);
+        }
+    },
+    suggest: function( text, html ) {
+        var suggestions = [];
+        for (rdoc_name in this._rdocs) {
+            if (rdoc_name.match(text, "i")) {
+                suggestions.push( CmdUtils.makeSugg(rdoc_name) );
+            }
+        }
+        return suggestions.splice(0, 5);
+    }
+};
+TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
+    //TODO better searching
+    var suggestions = [];
+    var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
+
+    for ( var term in fullIndex ) {
+      if (fullIndex[term].name.match(searchTerm, "i")) {
+         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url});
+      }
+    }
+    previewBlock.innerHTML = CmdUtils.renderTemplate( jQuery("#rdoc-search", feed.dom).html(),
+          { suggestions:suggestions,
+			suggestionCount: suggestions.length,
+            searchTerm:searchTerm,
+            rdoc: rdoc_type, 
+			indexReady: noun_type_rdoc._rdocs[rdoc_type].isIndexed
+          }
+    );
+};
+CmdUtils.CreateCommand({
+    name: "rdoc",
+    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby.png",
+    homepage: TallEye.homepage,
+    author: TallEye.author,
+    license: TallEye.license,
+    description: "Searches for classes or methods in a RDoc for your words.",
+    help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
+    takes: {"class or method": noun_arb_text},
+    modifiers: {in: noun_type_rdoc},
+    preview: function(pblock, directObject, in_rdoc) {
+        var searchTerm = directObject.text;
+        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+        if(searchTerm.length < 1) {
+          pblock.innerHTML = "Searches for classes or methods in a RDoc for your words.";
+          return;
+        }
+        if (!noun_type_rdoc._rdocs[rdoc_type].isIndexed) {
+            noun_type_rdoc._loadIndex(rdoc_type, function() {
+                TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
+            });
+        }
+        TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
+    },
+    execute: function(input, in_rdoc) {
+		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+        if(input.text.length < 1) {
+			Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl );
+        } else {
+			var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
+		    for ( var term in fullIndex ) {
+		      if (fullIndex[term].name.match(input.text, "i")) {
+				 Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url );
+		         break;
+		      }
+		    }
+		}
+    }
+});
+CmdUtils.CreateCommand({
+    name: "rdoc-load",
+    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_link.png",
+    homepage: TallEye.homepage,
+    author: TallEye.author,
+    license: TallEye.license,
+    description: "Command for loading rdocs to rdoc command.",
+    help: "If your favorite rdoc is not available, don't worry, just use 'rdoc-load' + base url + 'as' + name of your favorite rdoc. Example: rdoc-load http://api.rubyonrails.org/ as rails",
+    takes: {"rdoc base URL": noun_type_url},
+    modifiers: {as: noun_arb_text},
+    _validate: function (url, rdoc_name) {
+        var result = [false,false];
+        var indexes = ['class', 'method'];
+        var template = ['Classes', 'Methods']
+        if (url[url.length-1] != '/') url += '/';
+        for (idx in indexes) {
+          (function(idx){
+            Utils.parseRemoteDocument(
+                (url + 'fr_'+ indexes[idx] +'_index.html'),
+                null,              
+                function(response) {
+                   var page_header = jQuery("h1.section-bar",response);
+                   var page_index = jQuery("#index-entries",response);
+                   result[idx] = (page_header.text() == template[idx] && page_index.length == 1);
+                   if (idx == 1) {
+                      if (result[0] && result[1]) {
+                        noun_type_rdoc._add(rdoc_name, url);
+                        displayMessage("Rdoc added successfully!\n\nTry: rdoc [term] in "+rdoc_name);
+                      } else {
+                        displayMessage("Rdoc url not valid!\n\nExample: rdoc-load http://api.rubyonrails.org/ as rails");
+                      }
+                   }
+                },
+                function(){
+                    displayMessage("Rdoc url not valid!\n\nExample: rdoc-load http://api.rubyonrails.org/ as rails");
+                }
+            );
+          })(idx);
+        }
+    },
+    preview: function(pblock, directObject, as_rdoc) {
+        var searchTerm = directObject.text;
+        var rdoc_suggested_name = as_rdoc.as.text || "rdoc-name";
+        if(searchTerm.length < 1) {
+          pblock.innerHTML = "Adds a Rdoc to rdoc command";
+          return;
+        }
+        pblock.innerHTML = "Adds Rdoc hosted at <b style=\"color:yellow\">"+ searchTerm +"</b> as <b style=\"color:yellow\">"+ rdoc_suggested_name +"</b> to rdoc command.<br /><small>obs.: You can also overwrite an existent rdoc index by just typing the same name used by rdoc command.</small>";
+    },
+    execute: function(input, as_rdoc) {
+        this._validate(input.text, as_rdoc.as.text);
+    }
+});
+CmdUtils.CreateCommand({
+    name: "rdoc-default",
+    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_go.png",
+    homepage: TallEye.homepage,
+    author: TallEye.author,
+    license: TallEye.license,
+    description: "Command for change the default rdoc when searching with rdoc command.",
+    help: "If you tired to put 'in [your favorite rdoc]' on each rdoc search command, use this command to change the default rdoc when searching.",
+    takes: {"rdoc": noun_type_rdoc},
+    preview: function(pblock, directObject) {
+        var searchTerm = directObject.text;
+        if(searchTerm.length < 1) {
+          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b>)";
+          return;
+        } 
+        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
+    }, 
+    execute: function(input) {
+        noun_type_rdoc._makeDefault(input.text);
+    } 
+});
+]]></script>
+</body>
+</html>
