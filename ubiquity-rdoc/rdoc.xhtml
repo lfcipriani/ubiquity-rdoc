@@ -35,7 +35,12 @@ var noun_type_rdoc = {
         rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
         ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
     },
-    _default: 'rails',
+    _setDefault: function (def) {
+		Application.prefs.setValue("extensions.ubiquity.rdoc", def); 
+	},
+	_getDefault: function () {
+		return Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
+	},
     _makeDefault: function (def) {
       if (this._rdocs[def]) {
         this._default = def;
