@@ -24,6 +24,7 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 	<small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
 </div>
 <script class="commands"><![CDATA[
+var EXTENSION_KEY = "extensions.ubiquity.rdoc"
 var TallEye = {
     homepage: "http://projects.talleye.com/ubiquity-rdoc/",
     author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
@@ -31,12 +32,20 @@ var TallEye = {
 };
 var noun_type_rdoc = {
     _name: 'rdoc',
-    _rdocs: {
-        rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        shoulda: { baseUrl: "http://dev.thoughtbot.com/shoulda/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        mocha: { baseUrl: "http://mocha.rubyforge.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        rspec: { baseUrl: "http://rspec.rubyforge.org/rspec/1.1.11/", isIndexed: false, searchIndex: { class: [], method: [] } },
+    _rdocs: function() {
+      rdocs = { 
+				rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	shoulda: { baseUrl: "http://dev.thoughtbot.com/shoulda/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	mocha: { baseUrl: "http://mocha.rubyforge.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	rspec: { baseUrl: "http://rspec.rubyforge.org/rspec/1.1.11/", isIndexed: false, searchIndex: { class: [], method: [] } }, 
+			}
+			
+			if !(Application.prefs.has(EXTENSION_KEY)) {
+				Application.prefs.setValue(EXTENSION_KEY, rdocs)
+			}
+			
+			return Application.prefs.getValue(EXTENSION_KEY, rdocs)
     },
     _default: 'rails',
     _makeDefault: function (def) {
@@ -48,7 +57,9 @@ var noun_type_rdoc = {
       }
     },
     _add: function(name, url) {
-        this._rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+				rdocs = this._rdocs
+        rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+				Application.prefs.setValue(EXTENSION_KEY, rdocs)
         this._loadIndex(name);
     },
     _loadIndex: function(rdoc_type, callback) {
