@@ -24,6 +24,13 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 	<small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
 </div>
 <script class="commands"><![CDATA[
+Components.utils.import("resource://gre/modules/JSON.jsm");
+
+var EXT_PATH = "extensions.ubiquity.rdoc"
+
+var SOURCES_KEY = EXT_PATH + ".sources"
+var DEFAULT_RDOC_KEY = EXT_PATH + ".default"
+
 var TallEye = {
     homepage: "http://projects.talleye.com/ubiquity-rdoc/",
     author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
@@ -31,26 +38,45 @@ var TallEye = {
 };
 var noun_type_rdoc = {
     _name: 'rdoc',
-    _rdocs: {
-        rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
+    _rdocs: function() {
+      rdocs = JSON.toString({ 
+				rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	shoulda: { baseUrl: "http://dev.thoughtbot.com/shoulda/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	mocha: { baseUrl: "http://mocha.rubyforge.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
+	     	rspec: { baseUrl: "http://rspec.rubyforge.org/rspec/1.1.11/", isIndexed: false, searchIndex: { class: [], method: [] } }, 
+			});
+			
+			if !(Application.prefs.has(SOURCES_KEY)) {
+				Application.prefs.setValue(SOURCES_KEY, rdocs);
+			}
+			
+			return JSON.fromString(Application.prefs.getValue(SOURCES_KEY, rdocs));
     },
+
     _setDefault: function (def) {
 		Application.prefs.setValue("extensions.ubiquity.rdoc", def); 
 	},
 	_getDefault: function () {
 		return Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
 	},
+
+    _default: function() {
+			return Application.prefs.getValue(DEFAULT_RDOC_KEY, 'rails');
+		},
+
     _makeDefault: function (def) {
       if (this._rdocs[def]) {
-        this._default = def;
+				Application.prefs.setValue(DEFAULT_RDOC_KEY, def)
         displayMessage('OK! You can try rdoc command for '+def+' now.');
       } else {
         displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
       }
     },
     _add: function(name, url) {
-        this._rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+				rdocs = this._rdocs
+        rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+				Application.prefs.setValue(SOURCES_KEY, JSON.toString(rdocs));
         this._loadIndex(name);
     },
     _loadIndex: function(rdoc_type, callback) {
