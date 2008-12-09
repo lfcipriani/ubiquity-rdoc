@@ -37,13 +37,17 @@ var noun_type_rdoc = {
     },
     _setDefault: function (def) {
 		Application.prefs.setValue("extensions.ubiquity.rdoc", def); 
+    this._default = def;
 	},
 	_getDefault: function () {
-		return Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
+    if (!this._default) {
+		  this._default = Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
+    }
+    return this._default;
 	},
     _makeDefault: function (def) {
       if (this._rdocs[def]) {
-        this._default = def;
+        this._setDefault(def);
         displayMessage('OK! You can try rdoc command for '+def+' now.');
       } else {
         displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
@@ -122,7 +126,7 @@ CmdUtils.CreateCommand({
     modifiers: {in: noun_type_rdoc},
     preview: function(pblock, directObject, in_rdoc) {
         var searchTerm = directObject.text;
-        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Searches for classes or methods in a RDoc for your words.";
           return;
@@ -135,7 +139,7 @@ CmdUtils.CreateCommand({
         TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
     },
     execute: function(input, in_rdoc) {
-		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
         if(input.text.length < 1) {
 			Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl );
         } else {
@@ -214,10 +218,10 @@ CmdUtils.CreateCommand({
     preview: function(pblock, directObject) {
         var searchTerm = directObject.text;
         if(searchTerm.length < 1) {
-          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b>)";
+          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b>)";
           return;
         } 
-        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
+        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
     }, 
     execute: function(input) {
         noun_type_rdoc._makeDefault(input.text);
