@@ -24,64 +24,77 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 	<small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
 </div>
 <script class="commands"><![CDATA[
-Components.utils.import("resource://gre/modules/JSON.jsm");
-
-var EXT_PATH = "extensions.ubiquity.rdoc"
-
-var SOURCES_KEY = EXT_PATH + ".sources"
-var DEFAULT_RDOC_KEY = EXT_PATH + ".default"
-
 var TallEye = {
     homepage: "http://projects.talleye.com/ubiquity-rdoc/",
     author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
-    license: "MPL, GPL"
+	contributors: ["Tino Gomes"],
+    license: "MPL, GPL",
+	preferences: {
+		SOURCES_KEY: "extensions.ubiquity.rdoc.sources",
+		DEFAULT_RDOC_KEY: "extensions.ubiquity.rdoc.default",
+		PRELOADED_RDOCS: {
+	        rails: "http://api.rubyonrails.org/",
+	        ruby: "http://www.ruby-doc.org/core/",
+			shoulda: "http://dev.thoughtbot.com/shoulda/",
+	     	mocha: "http://mocha.rubyforge.org/",
+	     	rspec_1_1_11: "http://rspec.rubyforge.org/rspec/1.1.11/",
+			rspec_rails_1_1_11: "http://rspec.rubyforge.org/rspec-rails/1.1.11/"
+	    },
+		getRdocs: function() {
+			if (!Application.prefs.has(this.SOURCES_KEY)) {
+				Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(this.PRELOADED_RDOCS));
+			} 
+			var tempRdocs = Application.prefs.getValue(this.SOURCES_KEY, this.PRELOADED_RDOCS);
+			tempRdocs = Utils.decodeJson(tempRdocs);
+			var temp = {};
+			for (key in tempRdocs) {
+				temp[key] = { baseUrl: tempRdocs[key], isIndexed: false, searchIndex: { class: [], method: [] } }
+			}
+			return temp;
+		},
+		setDefault: function(def) {
+			return Application.prefs.setValue(this.DEFAULT_RDOC_KEY, def); 
+		},
+		getDefault: function() {
+			return Application.prefs.getValue(this.DEFAULT_RDOC_KEY, 'rails');
+		},
+		addRdoc: function(name, url) {
+			var tempRdocs = Application.prefs.getValue(this.SOURCES_KEY, this.PRELOADED_RDOCS); 
+			tempRdocs = Utils.decodeJson(tempRdocs);
+			tempRdocs[name] = url;
+			Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(tempRdocs));
+			return { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+		}
+	}
 };
 var noun_type_rdoc = {
     _name: 'rdoc',
-    _rdocs: function() {
-      rdocs = JSON.toString({ 
-				rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-	     	ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
-	     	shoulda: { baseUrl: "http://dev.thoughtbot.com/shoulda/", isIndexed: false, searchIndex: { class: [], method: [] } },
-	     	mocha: { baseUrl: "http://mocha.rubyforge.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-	     	rspec: { baseUrl: "http://rspec.rubyforge.org/rspec/1.1.11/", isIndexed: false, searchIndex: { class: [], method: [] } }, 
-			});
-			
-			if !(Application.prefs.has(SOURCES_KEY)) {
-				Application.prefs.setValue(SOURCES_KEY, rdocs);
-			}
-			
-			return JSON.fromString(Application.prefs.getValue(SOURCES_KEY, rdocs));
-    },
-
+    _rdocs: null,
+	_getRdocs: function() {
+		if (!this._rdocs) {
+			this._rdocs = TallEye.preferences.getRdocs();
+			CmdUtils.log(this._rdocs);
+		}
+		return this._rdocs;
+	},
+    _getDefault: function() {
+		return TallEye.preferences.getDefault();
+	},
     _setDefault: function (def) {
-		Application.prefs.setValue("extensions.ubiquity.rdoc", def); 
-	},
-	_getDefault: function () {
-		return Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
-	},
-
-    _default: function() {
-			return Application.prefs.getValue(DEFAULT_RDOC_KEY, 'rails');
-		},
-
-    _makeDefault: function (def) {
-      if (this._rdocs[def]) {
-				Application.prefs.setValue(DEFAULT_RDOC_KEY, def)
+      if (this._getRdocs()[def]) {
+		TallEye.preferences.setDefault(def);
         displayMessage('OK! You can try rdoc command for '+def+' now.');
       } else {
         displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
       }
     },
     _add: function(name, url) {
-				rdocs = this._rdocs
-        rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
-				Application.prefs.setValue(SOURCES_KEY, JSON.toString(rdocs));
+		this._getRdocs()[name] = TallEye.preferences.addRdoc(name, url);
         this._loadIndex(name);
     },
     _loadIndex: function(rdoc_type, callback) {
         var indexes = ['class', 'method'];
-        var thatRdocs = this._rdocs[rdoc_type];
+        var thatRdocs = this._getRdocs()[rdoc_type];
         for (idx in indexes) {
           (function(idx){
             Utils.parseRemoteDocument(
@@ -109,7 +122,7 @@ var noun_type_rdoc = {
     },
     suggest: function( text, html ) {
         var suggestions = [];
-        for (rdoc_name in this._rdocs) {
+        for (rdoc_name in this._getRdocs()) {
             if (rdoc_name.match(text, "i")) {
                 suggestions.push( CmdUtils.makeSugg(rdoc_name) );
             }
@@ -120,11 +133,11 @@ var noun_type_rdoc = {
 TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
     //TODO better searching
     var suggestions = [];
-    var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
+    var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
 
     for ( var term in fullIndex ) {
       if (fullIndex[term].name.match(searchTerm, "i")) {
-         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url});
+         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url});
       }
     }
     previewBlock.innerHTML = CmdUtils.renderTemplate( jQuery("#rdoc-search", feed.dom).html(),
@@ -132,7 +145,7 @@ TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
 			suggestionCount: suggestions.length,
             searchTerm:searchTerm,
             rdoc: rdoc_type, 
-			indexReady: noun_type_rdoc._rdocs[rdoc_type].isIndexed
+			indexReady: noun_type_rdoc._getRdocs()[rdoc_type].isIndexed
           }
     );
 };
@@ -148,12 +161,12 @@ CmdUtils.CreateCommand({
     modifiers: {in: noun_type_rdoc},
     preview: function(pblock, directObject, in_rdoc) {
         var searchTerm = directObject.text;
-        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Searches for classes or methods in a RDoc for your words.";
           return;
         }
-        if (!noun_type_rdoc._rdocs[rdoc_type].isIndexed) {
+        if (!noun_type_rdoc._getRdocs()[rdoc_type].isIndexed) {
             noun_type_rdoc._loadIndex(rdoc_type, function() {
                 TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
             });
@@ -161,14 +174,14 @@ CmdUtils.CreateCommand({
         TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
     },
     execute: function(input, in_rdoc) {
-		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._default;
+		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
         if(input.text.length < 1) {
-			Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl );
+			Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl );
         } else {
-			var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
+			var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
 		    for ( var term in fullIndex ) {
 		      if (fullIndex[term].name.match(input.text, "i")) {
-				 Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url );
+				 Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url );
 		         break;
 		      }
 		    }
@@ -240,13 +253,13 @@ CmdUtils.CreateCommand({
     preview: function(pblock, directObject) {
         var searchTerm = directObject.text;
         if(searchTerm.length < 1) {
-          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b>)";
+          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b>)";
           return;
         } 
-        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._default +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
+        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
     }, 
     execute: function(input) {
-        noun_type_rdoc._makeDefault(input.text);
+        noun_type_rdoc._setDefault(input.text);
     } 
 });
 ]]></script>
