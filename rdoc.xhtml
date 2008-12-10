@@ -69,25 +69,6 @@ var TallEye = {
 };
 var noun_type_rdoc = {
     _name: 'rdoc',
-<<<<<<< HEAD:ubiquity-rdoc/rdoc.xhtml
-    _rdocs: {
-        rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
-        ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
-    },
-    _setDefault: function (def) {
-		Application.prefs.setValue("extensions.ubiquity.rdoc", def); 
-    this._default = def;
-	},
-	_getDefault: function () {
-    if (!this._default) {
-		  this._default = Application.prefs.getValue("extensions.ubiquity.rdoc", 'rails');
-    }
-    return this._default;
-	},
-    _makeDefault: function (def) {
-      if (this._rdocs[def]) {
-        this._setDefault(def);
-=======
     _rdocs: null,
 	_getRdocs: function() {
 		if (!this._rdocs) {
@@ -101,7 +82,6 @@ var noun_type_rdoc = {
     _setDefault: function (def) {
       if (this._getRdocs()[def]) {
 		TallEye.preferences.setDefault(def);
->>>>>>> 1b339608316bb92e54f59159d0e4ec0590767b98:rdoc.xhtml
         displayMessage('OK! You can try rdoc command for '+def+' now.');
       } else {
         displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
