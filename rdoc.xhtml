@@ -27,10 +27,49 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 var TallEye = {
     homepage: "http://projects.talleye.com/ubiquity-rdoc/",
     author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
-    license: "MPL, GPL"
+	contributors: ["Tino Gomes"],
+    license: "MPL, GPL",
+	preferences: {
+		SOURCES_KEY: "extensions.ubiquity.rdoc.sources",
+		DEFAULT_RDOC_KEY: "extensions.ubiquity.rdoc.default",
+		PRELOADED_RDOCS: {
+	        rails: "http://api.rubyonrails.org/",
+	        ruby: "http://www.ruby-doc.org/core/",
+			shoulda: "http://dev.thoughtbot.com/shoulda/",
+	     	mocha: "http://mocha.rubyforge.org/",
+	     	rspec_1_1_11: "http://rspec.rubyforge.org/rspec/1.1.11/",
+			rspec_rails_1_1_11: "http://rspec.rubyforge.org/rspec-rails/1.1.11/"
+	    },
+		getRdocs: function() {
+			if (!Application.prefs.has(this.SOURCES_KEY)) {
+				Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(this.PRELOADED_RDOCS));
+			} 
+			var tempRdocs = Application.prefs.getValue(this.SOURCES_KEY, this.PRELOADED_RDOCS);
+			tempRdocs = Utils.decodeJson(tempRdocs);
+			var temp = {};
+			for (key in tempRdocs) {
+				temp[key] = { baseUrl: tempRdocs[key], isIndexed: false, searchIndex: { class: [], method: [] } }
+			}
+			return temp;
+		},
+		setDefault: function(def) {
+			return Application.prefs.setValue(this.DEFAULT_RDOC_KEY, def); 
+		},
+		getDefault: function() {
+			return Application.prefs.getValue(this.DEFAULT_RDOC_KEY, 'rails');
+		},
+		addRdoc: function(name, url) {
+			var tempRdocs = Application.prefs.getValue(this.SOURCES_KEY, this.PRELOADED_RDOCS); 
+			tempRdocs = Utils.decodeJson(tempRdocs);
+			tempRdocs[name] = url;
+			Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(tempRdocs));
+			return { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+		}
+	}
 };
 var noun_type_rdoc = {
     _name: 'rdoc',
+<<<<<<< HEAD:ubiquity-rdoc/rdoc.xhtml
     _rdocs: {
         rails: { baseUrl: "http://api.rubyonrails.org/", isIndexed: false, searchIndex: { class: [], method: [] } },
         ruby: { baseUrl: "http://www.ruby-doc.org/core/", isIndexed: false, searchIndex: { class: [], method: [] } },
@@ -48,18 +87,33 @@ var noun_type_rdoc = {
     _makeDefault: function (def) {
       if (this._rdocs[def]) {
         this._setDefault(def);
+=======
+    _rdocs: null,
+	_getRdocs: function() {
+		if (!this._rdocs) {
+			this._rdocs = TallEye.preferences.getRdocs();
+		}
+		return this._rdocs;
+	},
+    _getDefault: function() {
+		return TallEye.preferences.getDefault();
+	},
+    _setDefault: function (def) {
+      if (this._getRdocs()[def]) {
+		TallEye.preferences.setDefault(def);
+>>>>>>> 1b339608316bb92e54f59159d0e4ec0590767b98:rdoc.xhtml
         displayMessage('OK! You can try rdoc command for '+def+' now.');
       } else {
         displayMessage('"'+def+'" doesn\'t exist in rdoc index.');
       }
     },
     _add: function(name, url) {
-        this._rdocs[name] = { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+		this._getRdocs()[name] = TallEye.preferences.addRdoc(name, url);
         this._loadIndex(name);
     },
     _loadIndex: function(rdoc_type, callback) {
         var indexes = ['class', 'method'];
-        var thatRdocs = this._rdocs[rdoc_type];
+        var thatRdocs = this._getRdocs()[rdoc_type];
         for (idx in indexes) {
           (function(idx){
             Utils.parseRemoteDocument(
@@ -87,30 +141,61 @@ var noun_type_rdoc = {
     },
     suggest: function( text, html ) {
         var suggestions = [];
-        for (rdoc_name in this._rdocs) {
+        for (rdoc_name in this._getRdocs()) {
             if (rdoc_name.match(text, "i")) {
                 suggestions.push( CmdUtils.makeSugg(rdoc_name) );
             }
         }
-        return suggestions.splice(0, 5);
+        return suggestions.splice(0, 8);
     }
 };
+TallEye.escape = function(string) {
+	tempString = "";
+	escapeSet = ['\\','/','[',']','(',')','{','}','?','+','*','|','.','^','$'];
+	for (i in string) {
+		for (j in escapeSet) {
+			if (escapeSet[j] == string[i]) {
+				tempString = tempString + '\\';
+			} 
+		}
+		tempString = tempString + string[i];
+	}
+	return tempString;
+};
 TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
-    //TODO better searching
     var suggestions = [];
-    var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
+	var searchTerm_original = searchTerm;
+	searchTerm = TallEye.escape(searchTerm);
+	if (searchTerm.indexOf("#") == -1) { // when searching for Class_or_method
+	    var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
 
-    for ( var term in fullIndex ) {
-      if (fullIndex[term].name.match(searchTerm, "i")) {
-         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url});
-      }
-    }
+	    for ( var term in fullIndex ) {
+	      if (fullIndex[term].name.match(searchTerm, "i")) {
+	         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url});
+	      }
+	    }
+	} else { // when searching for Class#method
+		var terms = searchTerm.split("#");
+		var methodIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'];
+		var regexpr = /^(.+)\s\((.+)\)$/i;
+		
+		for ( var term in methodIndex ) {
+		  	var indexTerms = regexpr.exec(methodIndex[term].name);
+			// Class
+	    	if (indexTerms[2].match(terms[0], "i")) {
+		 		// Class#method
+				if (indexTerms[1].match(terms[1], "i")) {
+	    			suggestions.push({name: methodIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + methodIndex[term].url});
+				}
+	    	}
+	    }
+	}
     previewBlock.innerHTML = CmdUtils.renderTemplate( jQuery("#rdoc-search", feed.dom).html(),
           { suggestions:suggestions,
 			suggestionCount: suggestions.length,
-            searchTerm:searchTerm,
+            searchTerm:searchTerm_original,
             rdoc: rdoc_type, 
-			indexReady: noun_type_rdoc._rdocs[rdoc_type].isIndexed
+			indexReady: noun_type_rdoc._getRdocs()[rdoc_type].isIndexed
           }
     );
 };
@@ -120,6 +205,7 @@ CmdUtils.CreateCommand({
     homepage: TallEye.homepage,
     author: TallEye.author,
     license: TallEye.license,
+	contributors: TallEye.contributors,
     description: "Searches for classes or methods in a RDoc for your words.",
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
     takes: {"class or method": noun_arb_text},
@@ -131,7 +217,7 @@ CmdUtils.CreateCommand({
           pblock.innerHTML = "Searches for classes or methods in a RDoc for your words.";
           return;
         }
-        if (!noun_type_rdoc._rdocs[rdoc_type].isIndexed) {
+        if (!noun_type_rdoc._getRdocs()[rdoc_type].isIndexed) {
             noun_type_rdoc._loadIndex(rdoc_type, function() {
                 TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
             });
@@ -141,15 +227,34 @@ CmdUtils.CreateCommand({
     execute: function(input, in_rdoc) {
 		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
         if(input.text.length < 1) {
-			Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl );
+			Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl );
         } else {
-			var fullIndex = noun_type_rdoc._rdocs[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._rdocs[rdoc_type].searchIndex['method'] );
-		    for ( var term in fullIndex ) {
-		      if (fullIndex[term].name.match(input.text, "i")) {
-				 Utils.openUrlInBrowser( noun_type_rdoc._rdocs[rdoc_type].baseUrl + fullIndex[term].url );
-		         break;
-		      }
-		    }
+			input.text = TallEye.escape(input.text);
+			if (input.text.indexOf("#") == -1) { // when searching for Class_or_method
+				var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
+			    for ( var term in fullIndex ) {
+			      if (fullIndex[term].name.match(input.text, "i")) {
+					 Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url );
+			         break;
+			      }
+			    }
+			} else { // when searching for Class#method
+				var terms = input.text.split("#");
+				var methodIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'];
+				var regexpr = /^(.+)\s\((.+)\)$/i;
+
+				for ( var term in methodIndex ) {
+				  	var indexTerms = regexpr.exec(methodIndex[term].name);
+					// Class
+			    	if (indexTerms[2].match(terms[0], "i")) {
+				 		// Class#method
+						if (indexTerms[1].match(terms[1], "i")) {
+							Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + methodIndex[term].url );
+			    			break;
+						}
+			    	}
+			    }
+			}
 		}
     }
 });
@@ -224,7 +329,7 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
     }, 
     execute: function(input) {
-        noun_type_rdoc._makeDefault(input.text);
+        noun_type_rdoc._setDefault(input.text);
     } 
 });
 ]]></script>
