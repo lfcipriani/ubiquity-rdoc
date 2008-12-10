@@ -73,7 +73,6 @@ var noun_type_rdoc = {
 	_getRdocs: function() {
 		if (!this._rdocs) {
 			this._rdocs = TallEye.preferences.getRdocs();
-			CmdUtils.log(this._rdocs);
 		}
 		return this._rdocs;
 	},
@@ -127,23 +126,54 @@ var noun_type_rdoc = {
                 suggestions.push( CmdUtils.makeSugg(rdoc_name) );
             }
         }
-        return suggestions.splice(0, 5);
+        return suggestions.splice(0, 8);
     }
 };
+TallEye.escape = function(string) {
+	tempString = "";
+	escapeSet = ['\\','/','[',']','(',')','{','}','?','+','*','|','.','^','$'];
+	for (i in string) {
+		for (j in escapeSet) {
+			if (escapeSet[j] == string[i]) {
+				tempString = tempString + '\\';
+			} 
+		}
+		tempString = tempString + string[i];
+	}
+	return tempString;
+};
 TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
-    //TODO better searching
     var suggestions = [];
-    var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
+	var searchTerm_original = searchTerm;
+	searchTerm = TallEye.escape(searchTerm);
+	if (searchTerm.indexOf("#") == -1) { // when searching for Class_or_method
+	    var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
 
-    for ( var term in fullIndex ) {
-      if (fullIndex[term].name.match(searchTerm, "i")) {
-         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url});
-      }
-    }
+	    for ( var term in fullIndex ) {
+	      if (fullIndex[term].name.match(searchTerm, "i")) {
+	         suggestions.push({name: fullIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url});
+	      }
+	    }
+	} else { // when searching for Class#method
+		var terms = searchTerm.split("#");
+		var methodIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'];
+		var regexpr = /^(.+)\s\((.+)\)$/i;
+		
+		for ( var term in methodIndex ) {
+		  	var indexTerms = regexpr.exec(methodIndex[term].name);
+			// Class
+	    	if (indexTerms[2].match(terms[0], "i")) {
+		 		// Class#method
+				if (indexTerms[1].match(terms[1], "i")) {
+	    			suggestions.push({name: methodIndex[term].name, url: noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + methodIndex[term].url});
+				}
+	    	}
+	    }
+	}
     previewBlock.innerHTML = CmdUtils.renderTemplate( jQuery("#rdoc-search", feed.dom).html(),
           { suggestions:suggestions,
 			suggestionCount: suggestions.length,
-            searchTerm:searchTerm,
+            searchTerm:searchTerm_original,
             rdoc: rdoc_type, 
 			indexReady: noun_type_rdoc._getRdocs()[rdoc_type].isIndexed
           }
@@ -179,13 +209,32 @@ CmdUtils.CreateCommand({
         if(input.text.length < 1) {
 			Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl );
         } else {
-			var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
-		    for ( var term in fullIndex ) {
-		      if (fullIndex[term].name.match(input.text, "i")) {
-				 Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url );
-		         break;
-		      }
-		    }
+			input.text = TallEye.escape(input.text);
+			if (input.text.indexOf("#") == -1) { // when searching for Class_or_method
+				var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
+			    for ( var term in fullIndex ) {
+			      if (fullIndex[term].name.match(input.text, "i")) {
+					 Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url );
+			         break;
+			      }
+			    }
+			} else { // when searching for Class#method
+				var terms = input.text.split("#");
+				var methodIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'];
+				var regexpr = /^(.+)\s\((.+)\)$/i;
+
+				for ( var term in methodIndex ) {
+				  	var indexTerms = regexpr.exec(methodIndex[term].name);
+					// Class
+			    	if (indexTerms[2].match(terms[0], "i")) {
+				 		// Class#method
+						if (indexTerms[1].match(terms[1], "i")) {
+							Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + methodIndex[term].url );
+			    			break;
+						}
+			    	}
+			    }
+			}
 		}
     }
 });
