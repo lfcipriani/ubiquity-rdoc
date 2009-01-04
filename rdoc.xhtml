@@ -263,7 +263,7 @@ CmdUtils.CreateCommand({
                 (url + 'fr_'+ indexes[idx] +'_index.html'),
                 null,              
                 function(response) {
-                   var page_header = jQuery("h1.section-bar",response);
+                   var page_header = jQuery("h1",response);
                    var page_index = jQuery("#index-entries",response);
                    result[idx] = (page_header.text() == template[idx] && page_index.length == 1);
                    if (idx == 1) {
