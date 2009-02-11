@@ -11,7 +11,11 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
     <p>Searches for <b style="color:yellow">${searchTerm}</b> in <b style="color:yellow">${rdoc}</b> rdoc.</p>
 	<div style="height: 200px; overflow: auto; border: 1px solid #0073F3; padding: 5px;">
     {for sug in suggestions}
-      <a href="${sug.url}" style="font-size: 85%; color: #EEE;">${sug.name}</a><br />
+	  {if sug_index == 0}
+	      <a href="${sug.url}" style="font-size: 100%; color: yellow; font-weight: bold;">${sug.name}</a><br />
+	  {else}
+	  	  <a href="${sug.url}" style="font-size: 85%; color: #EEE;">${sug.name}</a><br />
+	  {/if}
     {forelse}
 	  {if !indexReady}
 	      <p>Loading...</p>
@@ -259,7 +263,7 @@ CmdUtils.CreateCommand({
                 (url + 'fr_'+ indexes[idx] +'_index.html'),
                 null,              
                 function(response) {
-                   var page_header = jQuery("h1.section-bar",response);
+                   var page_header = jQuery("h1",response);
                    var page_index = jQuery("#index-entries",response);
                    result[idx] = (page_header.text() == template[idx] && page_index.length == 1);
                    if (idx == 1) {
