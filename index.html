@@ -17,7 +17,8 @@
 	<h2>Last releases</h2>
 	<p>Follow this project on GitHub: <a href="http://github.com/lfcipriani/ubiquity-rdoc/tree/master"> http://github.com/lfcipriani/ubiquity-rdoc/tree/master</a></p>
 	<ul>
-		<li>2009-01-04: highlight in first item of suggestion list, and a bugfix on rdoc-load validation (thanks to Will Farrington)</li>
+		<li>2009-02-25: added 'rdoc-unload' command and some usability improvements</li>
+		<li>2009-01-04: highlight in first item of suggestion list, and a bugfix on rdoc-load validation</li>
 		<li>2008-12-10: better searching on methods and classes: [implemented the '#' modifier to do a advanced search on Class#method. Try it searching for 'rdoc String#delete in ruby' to see an example. You could also ommit the class or method like '#delete' or 'String#'.]</li>
 		<li>2008-12-09: persist user loaded rdoc data in browser: [default rdoc and rdoc indexes are stored on browser preferences, no need to reload each time the browser starts]</li>
 	</ul>
@@ -55,7 +56,8 @@
 	<img src="images/Picture_4.png" alt="loading rspec to rdoc search command" />
 	<p>Base URL is the main page address of the rdoc, without 'index.html'. 
 		RDoc name is the name that you want to use when searching rdoc command, you can
-		 overwrite an existent rdoc index by just typing the same name used by rdoc command.</p>
+		 overwrite an existent rdoc index by just typing the same name used by rdoc command.</p>	
+	<p> You could also use the 'rdoc-unload'  command to remove unused rdocs.</p>
 	<p>Now, we can search on rspec documentation:</p>
 	<img src="images/Picture_5.png" alt="searching on rspec" />
 	<p>Finally, you could also change the default rdoc name used in searches. Type 'rdoc-default rspec'</p>
