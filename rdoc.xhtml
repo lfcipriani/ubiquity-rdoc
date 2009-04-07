@@ -218,6 +218,7 @@ CmdUtils.CreateCommand({
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
     takes: {"class or method": noun_arb_text},
     modifiers: {in: noun_type_rdoc},
+	previewDelay: 800,
     preview: function(pblock, directObject, in_rdoc) {
         var searchTerm = directObject.text;
         var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
