@@ -208,7 +208,7 @@ TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
     );
 };
 CmdUtils.CreateCommand({
-    name: "rdoc",
+    names: ["rdoc"],
     icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby.png",
     homepage: TallEye.homepage,
     author: TallEye.author,
@@ -216,12 +216,12 @@ CmdUtils.CreateCommand({
 	contributors: TallEye.contributors,
     description: "Searches for classes or methods in a RDoc for your words.",
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
-    takes: {"class or method": noun_arb_text},
-    modifiers: {in: noun_type_rdoc},
+    arguments: [{ role: "object", nountype: noun_arb_text, label: "class or method" },
+                { role: "location", nountype: noun_type_rdoc }],
 	previewDelay: 800,
-    preview: function(pblock, directObject, in_rdoc) {
-        var searchTerm = directObject.text;
-        var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
+    preview: function(pblock, args) {
+        var searchTerm = args.object.text;
+        var rdoc_type = args.location.text || noun_type_rdoc._getDefault();
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Searches for classes or methods in a RDoc for your words.";
           return;
@@ -233,22 +233,22 @@ CmdUtils.CreateCommand({
         }
         TallEye.searchOnRdoc(searchTerm, rdoc_type, pblock);
     },
-    execute: function(input, in_rdoc) {
-		var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
-        if(input.text.length < 1) {
+    execute: function(args) {
+		var rdoc_type = args.location.text || noun_type_rdoc._getDefault();
+        if(args.object.text.length < 1) {
 			Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl );
         } else {
-			input.text = TallEye.escape(input.text);
-			if (input.text.indexOf("#") == -1) { // when searching for Class_or_method
+			args.object.text = TallEye.escape(args.object.text);
+			if (args.object.text.indexOf("#") == -1) { // when searching for Class_or_method
 				var fullIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['class'].concat( noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'] );
 			    for ( var term in fullIndex ) {
-			      if (fullIndex[term].name.match(input.text, "i")) {
+			      if (fullIndex[term].name.match(args.object.text, "i")) {
 					 Utils.openUrlInBrowser( noun_type_rdoc._getRdocs()[rdoc_type].baseUrl + fullIndex[term].url );
 			         break;
 			      }
 			    }
 			} else { // when searching for Class#method
-				var terms = input.text.split("#");
+				var terms = args.object.text.split("#");
 				var methodIndex = noun_type_rdoc._getRdocs()[rdoc_type].searchIndex['method'];
 				var regexpr = /^(.+)\s\((.+)\)$/i;
 
@@ -268,15 +268,15 @@ CmdUtils.CreateCommand({
     }
 });
 CmdUtils.CreateCommand({
-    name: "rdoc-load",
+    names: ["rdoc-load"],
     icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_link.png",
     homepage: TallEye.homepage,
     author: TallEye.author,
     license: TallEye.license,
     description: "Command for loading rdocs to rdoc command.",
     help: "If your favorite rdoc is not available, don't worry, just use 'rdoc-load' + base url + 'as' + name of your favorite rdoc. Example: rdoc-load http://api.rubyonrails.org/ as rails",
-    takes: {"rdoc base URL": noun_type_url},
-    modifiers: {as: noun_arb_text},
+    arguments: [{ role: "object", nountype: noun_type_url, label: "rdoc base URL" },
+                { role: "alias", nountype: noun_arb_text }],
     _validate: function (url, rdoc_name) {
         var result = [false,false];
         var indexes = ['class', 'method'];
@@ -307,59 +307,59 @@ CmdUtils.CreateCommand({
           })(idx);
         }
     },
-    preview: function(pblock, directObject, as_rdoc) {
-        var searchTerm = directObject.text;
-        var rdoc_suggested_name = as_rdoc.as.text || "rdoc-name";
+    preview: function(pblock, args) {
+        var searchTerm = args.object.text;
+        var rdoc_suggested_name = args.alias.text || "rdoc-name";
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Adds a Rdoc to rdoc command";
           return;
         }
         pblock.innerHTML = "Adds Rdoc hosted at <b style=\"color:yellow\">"+ searchTerm +"</b> as <b style=\"color:yellow\">"+ rdoc_suggested_name +"</b> to rdoc command.<br /><small>obs.: You can also overwrite an existent rdoc index by just typing the same name used by rdoc command.</small>";
     },
-    execute: function(input, as_rdoc) {
-        this._validate(input.text, as_rdoc.as.text);
+    execute: function(args) {
+        this._validate(args.object.text, args.alias.text);
     }
 });
 CmdUtils.CreateCommand({
-    name: "rdoc-unload",
+    names: ["rdoc-unload"],
     icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_delete.png",
     homepage: TallEye.homepage,
     author: TallEye.author,
     license: TallEye.license,
     description: "Command for loading rdocs to rdoc command.",
     help: "If you want to unload any rdoc, type 'rdoc-unload' + loaded rdoc name",
-    takes: {"rdoc": noun_type_rdoc},
-    preview: function(pblock, directObject) {
-        var searchTerm = directObject.text;
+    arguments: [{ role: "object", nountype: noun_type_rdoc, label: "rdoc" }],
+    preview: function(pblock, args) {
+        var searchTerm = args.object.text;
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Unload a rdoc." + TallEye.availableRdocs();
           return;
         } 
         pblock.innerHTML = "Unload <b style=\"color:yellow\">"+ searchTerm +"</b> rdoc. You won't be able to search on this rdoc anymore." + TallEye.availableRdocs();
     }, 
-    execute: function(input) {
-        noun_type_rdoc._remove(input.text);
+    execute: function(args) {
+        noun_type_rdoc._remove(args.object.text);
     } 
 });
 CmdUtils.CreateCommand({
-    name: "rdoc-default",
+    names: ["rdoc-default"],
     icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_go.png",
     homepage: TallEye.homepage,
     author: TallEye.author,
     license: TallEye.license,
     description: "Command for change the default rdoc when searching with rdoc command.",
     help: "If you tired to put 'in [your favorite rdoc]' on each rdoc search command, use this command to change the default rdoc when searching.",
-    takes: {"rdoc": noun_type_rdoc},
-    preview: function(pblock, directObject) {
-        var searchTerm = directObject.text;
+    arguments: [{ role: "object", nountype: noun_type_rdoc, label: "rdoc" }],
+    preview: function(pblock, args) {
+        var searchTerm = args.object.text;
         if(searchTerm.length < 1) {
           pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b>)" + TallEye.availableRdocs();
           return;
         } 
         pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command." + TallEye.availableRdocs();
     }, 
-    execute: function(input) {
-        noun_type_rdoc._setDefault(input.text);
+    execute: function(args) {
+        noun_type_rdoc._setDefault(args.object.text);
     } 
 });
 ]]></script>
