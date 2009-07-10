@@ -18,7 +18,7 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 	  {/if}
     {forelse}
 	  {if !indexReady}
-	      <p>Loading...</p>
+	      <p>Loading index...</p>
 	  {else}
 	  	  <p>Your search did not match any class or method.</p>
 	  {/if}
@@ -40,9 +40,7 @@ var TallEye = {
 	        rails: "http://api.rubyonrails.org/",
 	        ruby: "http://www.ruby-doc.org/core/",
 			shoulda: "http://dev.thoughtbot.com/shoulda/",
-	     	mocha: "http://mocha.rubyforge.org/",
-	     	rspec_1_1_11: "http://rspec.rubyforge.org/rspec/1.1.11/",
-			rspec_rails_1_1_11: "http://rspec.rubyforge.org/rspec-rails/1.1.11/"
+	     	mocha: "http://mocha.rubyforge.org/"
 	    },
 		getRdocs: function() {
 			if (!Application.prefs.has(this.SOURCES_KEY)) {
@@ -68,6 +66,16 @@ var TallEye = {
 			tempRdocs[name] = url;
 			Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(tempRdocs));
 			return { baseUrl: url, isIndexed: false, searchIndex: { class: [], method: [] } };
+		},
+		removeRdoc: function(name) {
+			var tempRdocs = Application.prefs.getValue(this.SOURCES_KEY, this.PRELOADED_RDOCS); 
+			tempRdocs = Utils.decodeJson(tempRdocs);
+			if (delete tempRdocs[name]) {
+				Application.prefs.setValue(this.SOURCES_KEY, Utils.encodeJson(tempRdocs));
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 };
@@ -95,6 +103,14 @@ var noun_type_rdoc = {
 		this._getRdocs()[name] = TallEye.preferences.addRdoc(name, url);
         this._loadIndex(name);
     },
+	_remove: function(name) {
+		if (TallEye.preferences.removeRdoc(name)) {
+			delete this._getRdocs()[name];
+			displayMessage('The ' + name + ' rdoc is unloaded.');
+		} else {
+			displayMessage('There was a problem when unloading ' + name + '.');
+		}
+	},
     _loadIndex: function(rdoc_type, callback) {
         var indexes = ['class', 'method'];
         var thatRdocs = this._getRdocs()[rdoc_type];
@@ -146,6 +162,14 @@ TallEye.escape = function(string) {
 	}
 	return tempString;
 };
+TallEye.availableRdocs = function() {
+	result = '<p>Available RDocs:</p><ul>';
+	for (key in noun_type_rdoc._getRdocs()) {
+		result += '<li>' + key + '</li>';
+	}
+	result += '</ul>';
+	return result;
+};
 TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
     var suggestions = [];
 	var searchTerm_original = searchTerm;
@@ -194,6 +218,7 @@ CmdUtils.CreateCommand({
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
     takes: {"class or method": noun_arb_text},
     modifiers: {in: noun_type_rdoc},
+	previewDelay: 800,
     preview: function(pblock, directObject, in_rdoc) {
         var searchTerm = directObject.text;
         var rdoc_type = in_rdoc.in.text || noun_type_rdoc._getDefault();
@@ -296,6 +321,27 @@ CmdUtils.CreateCommand({
     }
 });
 CmdUtils.CreateCommand({
+    name: "rdoc-unload",
+    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_delete.png",
+    homepage: TallEye.homepage,
+    author: TallEye.author,
+    license: TallEye.license,
+    description: "Command for loading rdocs to rdoc command.",
+    help: "If you want to unload any rdoc, type 'rdoc-unload' + loaded rdoc name",
+    takes: {"rdoc": noun_type_rdoc},
+    preview: function(pblock, directObject) {
+        var searchTerm = directObject.text;
+        if(searchTerm.length < 1) {
+          pblock.innerHTML = "Unload a rdoc." + TallEye.availableRdocs();
+          return;
+        } 
+        pblock.innerHTML = "Unload <b style=\"color:yellow\">"+ searchTerm +"</b> rdoc. You won't be able to search on this rdoc anymore." + TallEye.availableRdocs();
+    }, 
+    execute: function(input) {
+        noun_type_rdoc._remove(input.text);
+    } 
+});
+CmdUtils.CreateCommand({
     name: "rdoc-default",
     icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_go.png",
     homepage: TallEye.homepage,
@@ -307,10 +353,10 @@ CmdUtils.CreateCommand({
     preview: function(pblock, directObject) {
         var searchTerm = directObject.text;
         if(searchTerm.length < 1) {
-          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b>)";
+          pblock.innerHTML = "Change the default rdoc search (current: <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b>)" + TallEye.availableRdocs();
           return;
         } 
-        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command";
+        pblock.innerHTML = "Change the default rdoc search from <b style=\"color:yellow\">"+ noun_type_rdoc._getDefault() +"</b> to <b style=\"color:yellow\">"+ searchTerm +"</b> on rdoc command." + TallEye.availableRdocs();
     }, 
     execute: function(input) {
         noun_type_rdoc._setDefault(input.text);
