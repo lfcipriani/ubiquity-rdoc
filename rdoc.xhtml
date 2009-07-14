@@ -207,17 +207,97 @@ TallEye.searchOnRdoc = function(searchTerm, rdoc_type, previewBlock) {
           }
     );
 };
-CmdUtils.CreateCommand({
+// translates Parser 2 commands to Parser 1; applies some defaults for all commands
+TallEye.createCommand = function(cmd) {
+  // default settings
+  if (!cmd.icon) {
+    cmd.icon         = "http://projects.talleye.com/ubiquity-rdoc/images/ruby.png";
+  }
+  if (!cmd.homepage) {
+    cmd.homepage     = TallEye.homepage;
+  }
+  if (!cmd.author) {
+    cmd.author       = TallEye.author;
+  }
+  if (!cmd.license) {
+    cmd.license      = TallEye.license;
+  }
+  if (!cmd.contributors) {
+    cmd.contributors = TallEye.contributors;
+  }
+
+  if (CmdUtils.parserVersion == 2) {
+    // should be fine...
+  }
+  else {
+    // names -> name + synonyms
+    var names = cmd.names;
+    cmd.name = names.shift();
+
+    if (names.length > 0) {
+      cmd.synonyms = names;
+    }
+
+    cmd.names = null;
+
+    // map modifier's label to its role for preview + execute
+    var modifier_map = {};
+
+    // arguments -> takes + modifiers
+    for (var i = 0; i < cmd.arguments.length; i++) {
+      var arg = cmd.arguments[i];
+      var attr = "takes";
+
+      if (arg.role != "object") {
+        attr = "modifiers";
+        modifier_map[arg.label] = arg.role;
+      }
+
+      if (!cmd[attr]) {
+        cmd[attr] = {};
+      }
+
+      cmd[attr][arg.label] = arg.nountype;
+    }
+
+    cmd.arguments = null;
+
+    // preview + execute argument handling
+    var pre = cmd.preview;
+    if (pre) {
+      cmd.preview = function(pblock, object, modifiers) {
+        var args = { object: object };
+
+        for (attr in modifiers) {
+          args[modifier_map[attr]] = modifiers[attr];
+        }
+
+        pre(pblock, args);
+      };
+    }
+
+    var exe = cmd.execute;
+    if (exe) {
+      cmd.execute = function(object, modifiers) {
+        var args = { object: object };
+
+        for (attr in modifiers) {
+          args[modifier_map[attr]] = modifiers[attr];
+        }
+
+        exe(args);
+      };
+    }
+  }
+
+  CmdUtils.CreateCommand(cmd);
+};
+TallEye.createCommand({
     names: ["rdoc"],
-    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby.png",
-    homepage: TallEye.homepage,
-    author: TallEye.author,
-    license: TallEye.license,
-	contributors: TallEye.contributors,
     description: "Searches for classes or methods in a RDoc for your words.",
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
     arguments: [{ role: "object", nountype: noun_arb_text, label: "class or method" },
-                { role: "location", nountype: noun_type_rdoc }],
+                { role: "location", nountype: noun_type_rdoc, label: "in" }],
 	previewDelay: 800,
     preview: function(pblock, args) {
         var searchTerm = args.object.text;
@@ -267,16 +347,12 @@ CmdUtils.CreateCommand({
 		}
     }
 });
-CmdUtils.CreateCommand({
+TallEye.createCommand({
     names: ["rdoc-load"],
-    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_link.png",
-    homepage: TallEye.homepage,
-    author: TallEye.author,
-    license: TallEye.license,
     description: "Command for loading rdocs to rdoc command.",
     help: "If your favorite rdoc is not available, don't worry, just use 'rdoc-load' + base url + 'as' + name of your favorite rdoc. Example: rdoc-load http://api.rubyonrails.org/ as rails",
     arguments: [{ role: "object", nountype: noun_type_url, label: "rdoc base URL" },
-                { role: "alias", nountype: noun_arb_text }],
+                { role: "alias", nountype: noun_arb_text, label: "as" }],
     _validate: function (url, rdoc_name) {
         var result = [false,false];
         var indexes = ['class', 'method'];
@@ -320,12 +396,8 @@ CmdUtils.CreateCommand({
         this._validate(args.object.text, args.alias.text);
     }
 });
-CmdUtils.CreateCommand({
+TallEye.createCommand({
     names: ["rdoc-unload"],
-    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_delete.png",
-    homepage: TallEye.homepage,
-    author: TallEye.author,
-    license: TallEye.license,
     description: "Command for loading rdocs to rdoc command.",
     help: "If you want to unload any rdoc, type 'rdoc-unload' + loaded rdoc name",
     arguments: [{ role: "object", nountype: noun_type_rdoc, label: "rdoc" }],
@@ -341,12 +413,8 @@ CmdUtils.CreateCommand({
         noun_type_rdoc._remove(args.object.text);
     } 
 });
-CmdUtils.CreateCommand({
+TallEye.createCommand({
     names: ["rdoc-default"],
-    icon: "http://projects.talleye.com/ubiquity-rdoc/images/ruby_go.png",
-    homepage: TallEye.homepage,
-    author: TallEye.author,
-    license: TallEye.license,
     description: "Command for change the default rdoc when searching with rdoc command.",
     help: "If you tired to put 'in [your favorite rdoc]' on each rdoc search command, use this command to change the default rdoc when searching.",
     arguments: [{ role: "object", nountype: noun_type_rdoc, label: "rdoc" }],
