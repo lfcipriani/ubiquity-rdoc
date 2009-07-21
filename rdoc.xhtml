@@ -31,7 +31,7 @@ corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here<
 var TallEye = {
     homepage: "http://projects.talleye.com/ubiquity-rdoc/",
     author: { name: "Luis Cipriani", email: "lfcipriani@talleye.com"},
-	contributors: ["Tino Gomes"],
+	contributors: ["Tino Gomes", "Jens Wille"],
     license: "MPL, GPL",
 	preferences: {
 		SOURCES_KEY: "extensions.ubiquity.rdoc.sources",
@@ -298,7 +298,7 @@ TallEye.createCommand({
     help: "Enter 'rdoc' + any class or method name + if you want to search on a specific rdoc, 'in' + name of available rdoc. The default rdoc is rails.",
     arguments: [{ role: "object", nountype: noun_arb_text, label: "class or method" },
                 { role: "location", nountype: noun_type_rdoc, label: "in" }],
-	previewDelay: 800,
+	previewDelay: 1000,
     preview: function(pblock, args) {
         var searchTerm = args.object.text;
         var rdoc_type = args.location.text || noun_type_rdoc._getDefault();
