@@ -8,24 +8,24 @@
 <p>This xhtml source contains commands for searching libraries published as Rdocs.  Its
 corresponding feed is <a href="http://projects.talleye.com/ubiquity-rdoc/">here</a>.</p>
 <div id="rdoc-search" style="display: none;">
-    <p>Searches for <b style="color:yellow">${searchTerm}</b> in <b style="color:yellow">${rdoc}</b> rdoc.</p>
-	<div style="height: 200px; overflow: auto; border: 1px solid #0073F3; padding: 5px;">
+  <p>Searches for <b style="color:yellow">${searchTerm}</b> in <b style="color:yellow">${rdoc}</b> rdoc.</p>
+  <div style="height: 200px; overflow: auto; border: 1px solid #0073F3; padding: 5px;">
     {for sug in suggestions}
-	  {if sug_index == 0}
-	      <a href="${sug.url}" style="font-size: 100%; color: yellow; font-weight: bold;">${sug.name}</a><br />
-	  {else}
-	  	  <a href="${sug.url}" style="font-size: 85%; color: #EEE;">${sug.name}</a><br />
-	  {/if}
+      {if sug_index == 0}
+        <a href="${sug.url}" style="font-size: 100%; color: yellow; font-weight: bold;">${sug.name}</a><br />
+      {else}
+        <a href="${sug.url}" style="font-size: 85%; color: #EEE;">${sug.name}</a><br />
+      {/if}
     {forelse}
-	  {if !indexReady}
-	      <p>Loading index...</p>
-	  {else}
-	  	  <p>Your search did not match any class or method.</p>
-	  {/if}
+      {if !indexReady}
+        <p>Loading index...</p>
+      {else}
+        <p>Your search did not match any class or method.</p>
+      {/if}
     {/for}
-	</div>
-	<p>Showing ${suggestionCount} item(s).</p>
-	<small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
+  </div>
+  <p>Showing ${suggestionCount} item(s).</p>
+  <small>Click a class or method name to open its description. Press Enter to open description of the first item.</small>
 </div>
 <script class="commands"><![CDATA[
 <%= javascript %>

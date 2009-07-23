@@ -5,80 +5,120 @@
   <title>Ubiquity RDoc Search Command</title>
   <link rel="commands" href="rdoc.xhtml" name="rdoc" />
   <style type="text/css">
-	body {font-family: Verdana}
-	h2 {border-bottom: 2px solid navy}
+    body {
+      font-family: Verdana;
+    }
+    h2 {
+      border-bottom: 2px solid navy;
+    }
   </style>
 </head>
 <body>
-	<h1>Ubiquity-RDoc</h1>
-	<p>Author: <a href="http://github.com/lfcipriani" title="GitHub profile">Luis Cipriani</a> (lfcipriani at talleye dot com)<br />
-	Contributors: <a href="http://github.com/blackwinter" title="GitHub profile">Jens Wille</a>, <a href="http://github.com/tinogomes" title="GitHub profile">Tino Gomes</a></p>
-	
-	<h2>Last releases</h2>
-	<p>Follow this project on GitHub: <a href="http://github.com/lfcipriani/ubiquity-rdoc/tree/master"> http://github.com/lfcipriani/ubiquity-rdoc/tree/master</a></p>
-	<ul>
-		<li>2009-07-20: upgrade to support Ubiquity 0.5.x new Parser and backward compability with Parser 1</li>
-		<li>2009-04-07: set previewDelay to 800 miliseconds, improve on usability</li>
-		<li>2009-02-25: added 'rdoc-unload' command and some usability improvements</li>
-		<li>2009-01-04: highlight in first item of suggestion list, and a bugfix on rdoc-load validation</li>
-		<li>2008-12-10: better searching on methods and classes: [implemented the '#' modifier to do a advanced search on Class#method. Try it searching for 'rdoc String#delete in ruby' to see an example. You could also ommit the class or method like '#delete' or 'String#'.]</li>
-		<li>2008-12-09: persist user loaded rdoc data in browser: [default rdoc and rdoc indexes are stored on browser preferences, no need to reload each time the browser starts]</li>
-	</ul>
-	<small>Obs.: If you checked 'auto-update feed' option when installing this command, the changes are already available for you. Otherwise, please access "about:ubiquity" in your browser, unsubscribe this command and then install it again.</small>
-	
-	<h2>What is Ubiquity-RDoc?</h2>
-	<p>A set of <a href="http://labs.mozilla.com/2008/08/introducing-ubiquity/">Mozilla Ubiquity</a> commands for searching on Ruby rdocs.</p>
-	
-	<h2>How to use this command?</h2>
-	<p>Do the following steps:</p>
-	
-	<h3>1. Install and learn Ubiquity</h3>
-	<p>Install: <a href="https://wiki.mozilla.org/Labs/Ubiquity">Mozilla Ubiquity Wiki</a><br />
-       Learn: <a href="https://wiki.mozilla.org/Labs/Ubiquity/Latest_Ubiquity_User_Tutorial">Ubiquity User Tutorial</a><br />
-	   Or watch this <a href="http://vimeo.com/1561578">video</a><br />
-       Nice and easy.</p>
-	
-	<h3>2. Install Ubiquity-RDoc</h3>
-	<p>After install Ubiquity, just access this page and follow the steps in 
-	<a href="https://wiki.mozilla.org/Labs/Ubiquity/Latest_Ubiquity_User_Tutorial#Teaching_Ubiquity_New_Commands">Teaching Ubiquity New Commands</a></p>
-	
-	<h3>3. Use it</h3>
-	<p>Ok, let's suppose that we want to read the description of "delete" method in rails, 
-		just start typing 'rdoc delete' and a box will show some suggestions:</p>
-	<img src="images/Picture_1.png" alt="rdoc delete" />
-	<p>But, in fact, we really want to access the "delete" method of <b>ruby</b> rdoc. Just continue typing 'in ruby'</p>
-	<img src="images/Picture_2.png" alt="rdoc delete in ruby" />
-	<p>Yes, rdoc command could switch the rdoc used on searching by just adding the modifier 'in + [rdoc name]'</p>
-	<p>Then, to access the documentation you could click an item or press enter to access 
-		the first item of the list. In the following picture, we clicked on "delete (String)" method.</p>
-	<img src="images/Picture_3.png" alt="rdoc delete in ruby after clicking on delete (String)" />
-	<p>Ubiquity-RDoc is released with rails and ruby rdocs, but, if you already know 
-		every method or class of these libraries and need to search on a different rdoc (for example, rspec), 
-		don't worry, you can load it by simply typing 'rdoc-load + [base URL] + as + [rdoc name]':</p>
-	<img src="images/Picture_4.png" alt="loading rspec to rdoc search command" />
-	<p>Base URL is the main page address of the rdoc, without 'index.html'. 
-		RDoc name is the name that you want to use when searching rdoc command, you can
-		 overwrite an existent rdoc index by just typing the same name used by rdoc command.</p>	
-	<p> You could also use the 'rdoc-unload'  command to remove unused rdocs.</p>
-	<p>Now, we can search on rspec documentation:</p>
-	<img src="images/Picture_5.png" alt="searching on rspec" />
-	<p>Finally, you could also change the default rdoc name used in searches. Type 'rdoc-default rspec'</p>
-	<img src="images/Picture_6.png" alt="changing default rdoc" />
-	<p>And then, rdoc delete</p>
-	<img src="images/Picture_7.png" alt="search rdoc rspec" />
-	
-	<h2>TODO</h2>
-	<ul>
-		<li>support to YARD and rdoc.info website</li>
-		<li>method or class description preview</li>
-		<li>search on all rdocs with 'rdoc delete in all' and 'rdoc-default all'</li>
-	</ul>
-	
-	<h2>Contact</h2>
-	<p>Any suggestion, bugs, etc, please, e-mail me: <b>lfcipriani at talleye dot com</b></p>
-	<p>This project is also hosted on GitHub: <a href="http://github.com/lfcipriani/ubiquity-rdoc/tree/master"> http://github.com/lfcipriani/ubiquity-rdoc/tree/master</a></p>
-	
-	<small>Icons created by <a href="http://www.famfamfam.com/lab/icons/silk/">FAM FAM FAM</a></small>
-	
+  <h1>Ubiquity-RDoc</h1>
+  <p>
+    Author: <a href="http://github.com/lfcipriani" title="GitHub profile">Luis Cipriani</a> (lfcipriani at talleye dot com)<br />
+    Contributors: <a href="http://github.com/blackwinter" title="GitHub profile">Jens Wille</a>, <a href="http://github.com/tinogomes" title="GitHub profile">Tino Gomes</a>
+  </p>
+
+  <h2>Last releases</h2>
+  <p>
+    Follow this project on GitHub:
+    <a href="http://github.com/lfcipriani/ubiquity-rdoc/tree/master"> http://github.com/lfcipriani/ubiquity-rdoc/tree/master</a>
+  </p>
+  <ul>
+    <li>2009-07-20: upgrade to support Ubiquity 0.5.x new Parser and backward compability with Parser 1</li>
+    <li>2009-04-07: set previewDelay to 800 miliseconds, improve on usability</li>
+    <li>2009-02-25: added 'rdoc-unload' command and some usability improvements</li>
+    <li>2009-01-04: highlight in first item of suggestion list, and a bugfix on rdoc-load validation</li>
+    <li>2008-12-10: better searching on methods and classes: [implemented the '#' modifier to do a advanced search on Class#method. Try it searching for 'rdoc String#delete in ruby' to see an example. You could also ommit the class or method like '#delete' or 'String#'.]</li>
+    <li>2008-12-09: persist user loaded rdoc data in browser: [default rdoc and rdoc indexes are stored on browser preferences, no need to reload each time the browser starts]</li>
+  </ul>
+  <small>Obs.: If you checked 'auto-update feed' option when installing this command, the changes are already available for you. Otherwise, please access "about:ubiquity" in your browser, unsubscribe this command and then install it again.</small>
+
+  <h2>What is Ubiquity-RDoc?</h2>
+  <p>
+    A set of <a href="http://labs.mozilla.com/2008/08/introducing-ubiquity/">Mozilla Ubiquity</a> commands for searching on Ruby rdocs.
+  </p>
+
+  <h2>How to use this command?</h2>
+  <p>Do the following steps:</p>
+
+  <h3>1. Install and learn Ubiquity</h3>
+  <p>
+    Install: <a href="https://wiki.mozilla.org/Labs/Ubiquity">Mozilla Ubiquity Wiki</a><br />
+    Learn:   <a href="https://wiki.mozilla.org/Labs/Ubiquity/Latest_Ubiquity_User_Tutorial">Ubiquity User Tutorial</a><br />
+    Or watch this <a href="http://vimeo.com/1561578">video</a><br />
+    Nice and easy.
+  </p>
+
+  <h3>2. Install Ubiquity-RDoc</h3>
+  <p>
+    After install Ubiquity, just access this page and follow the steps in
+    <a href="https://wiki.mozilla.org/Labs/Ubiquity/Latest_Ubiquity_User_Tutorial#Teaching_Ubiquity_New_Commands">Teaching Ubiquity New Commands</a>
+  </p>
+
+  <h3>3. Use it</h3>
+  <p>
+    Ok, let's suppose that we want to read the description of "delete" method in rails,
+    just start typing 'rdoc delete' and a box will show some suggestions:
+  </p>
+  <img src="images/Picture_1.png" alt="rdoc delete" />
+  <p>
+    But, in fact, we really want to access the "delete" method of <strong>ruby</strong> rdoc. Just continue typing 'in ruby'
+  </p>
+  <img src="images/Picture_2.png" alt="rdoc delete in ruby" />
+  <p>
+    Yes, rdoc command could switch the rdoc used on searching by just adding the modifier 'in + [rdoc name]'
+  </p>
+  <p>
+    Then, to access the documentation you could click an item or press enter to access
+    the first item of the list. In the following picture, we clicked on "delete (String)" method.
+  </p>
+  <img src="images/Picture_3.png" alt="rdoc delete in ruby after clicking on delete (String)" />
+  <p>
+    Ubiquity-RDoc is released with rails and ruby rdocs, but, if you already know
+    every method or class of these libraries and need to search on a different rdoc (for example, rspec),
+    don't worry, you can load it by simply typing 'rdoc-load + [base URL] + as + [rdoc name]':
+  </p>
+  <img src="images/Picture_4.png" alt="loading rspec to rdoc search command" />
+  <p>
+    Base URL is the main page address of the rdoc, without 'index.html'.
+    RDoc name is the name that you want to use when searching rdoc command, you can
+    overwrite an existent rdoc index by just typing the same name used by rdoc command.
+  </p>
+  <p>
+    You could also use the 'rdoc-unload'  command to remove unused rdocs.
+  </p>
+  <p>
+    Now, we can search on rspec documentation:
+  </p>
+  <img src="images/Picture_5.png" alt="searching on rspec" />
+  <p>
+    Finally, you could also change the default rdoc name used in searches. Type 'rdoc-default rspec'
+  </p>
+  <img src="images/Picture_6.png" alt="changing default rdoc" />
+  <p>
+    And then, rdoc delete
+  </p>
+  <img src="images/Picture_7.png" alt="search rdoc rspec" />
+
+  <h2>TODO</h2>
+  <ul>
+    <li>support to YARD and rdoc.info website</li>
+    <li>method or class description preview</li>
+    <li>search on all rdocs with 'rdoc delete in all' and 'rdoc-default all'</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>
+    Any suggestion, bugs, etc, please, e-mail me: <strong>lfcipriani at talleye dot com</strong>
+  </p>
+  <p>
+    This project is also hosted on GitHub:
+    <a href="http://github.com/lfcipriani/ubiquity-rdoc/tree/master"> http://github.com/lfcipriani/ubiquity-rdoc/tree/master</a>
+  </p>
+
+  <small>Icons created by <a href="http://www.famfamfam.com/lab/icons/silk/">FAM FAM FAM</a></small>
+
 </body>
 </html>
